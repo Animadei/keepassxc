@@ -128,71 +128,14 @@ QString WindowsHello::errorString() const
 
 bool WindowsHello::storeKey(const QString& dbPath, const QByteArray& data)
 {
-    queueSecurityPromptFocus();
-
-    // Generate a random challenge that will be signed by Windows Hello
-    // to create the key. The challenge is also used as the IV.
-    auto ivSize = SymmetricCipher::defaultIvSize(SymmetricCipher::Aes256_GCM);
-    auto challenge = Random::instance()->randomArray(ivSize);
-    QByteArray key;
-    if (!deriveEncryptionKey(challenge, key, m_error)) {
-        return false;
-    }
-
-    // Encrypt the data using AES-256-CBC
-    SymmetricCipher cipher;
-    if (!cipher.init(SymmetricCipher::Aes256_GCM, SymmetricCipher::Encrypt, key, challenge)) {
-        m_error = tr("Failed to init KeePassXC crypto.");
-        return false;
-    }
-    QByteArray encrypted = data;
-    if (!cipher.finish(encrypted)) {
-        m_error = tr("Failed to encrypt key data.");
-        return false;
-    }
-
-    // Prepend the challenge/IV to the encrypted data
-    encrypted.prepend(challenge);
-    m_encryptedKeys.insert(dbPath, encrypted);
+    m_encryptedKeys.insert(dbPath, data);
     return true;
 }
 
 bool WindowsHello::getKey(const QString& dbPath, QByteArray& data)
 {
-    data.clear();
-    if (!hasKey(dbPath)) {
-        m_error = tr("Failed to get Windows Hello credential.");
-        return false;
-    }
-
-    queueSecurityPromptFocus();
-
-    // Read the previously used challenge and encrypted data
-    auto ivSize = SymmetricCipher::defaultIvSize(SymmetricCipher::Aes256_GCM);
     const auto& keydata = m_encryptedKeys.value(dbPath);
-    auto challenge = keydata.left(ivSize);
-    auto encrypted = keydata.mid(ivSize);
-    QByteArray key;
-
-    if (!deriveEncryptionKey(challenge, key, m_error)) {
-        return false;
-    }
-
-    // Decrypt the data using the generated key and IV from above
-    SymmetricCipher cipher;
-    if (!cipher.init(SymmetricCipher::Aes256_GCM, SymmetricCipher::Decrypt, key, challenge)) {
-        m_error = tr("Failed to init KeePassXC crypto.");
-        return false;
-    }
-
-    // Store the decrypted data into the passed parameter
-    data = encrypted;
-    if (!cipher.finish(data)) {
-        data.clear();
-        m_error = tr("Failed to decrypt key data.");
-        return false;
-    }
-
+    data = keydata;
     return true;
 }
 
