@@ -174,6 +174,46 @@ bool DatabaseOpenWidget::unlockingDatabase()
     return m_unlockingDatabase;
 }
 
+bool DatabaseOpenWidget::updateHwKey()
+{
+#ifdef WITH_XC_YUBIKEY
+    do {
+        int selectionIndex = m_ui->challengeResponseCombo->currentIndex();
+        if (selectionIndex > 0) {
+            auto targetSerial = m_ui->challengeResponseCombo->itemData(selectionIndex).value<YubiKeySlot>().first;
+            if (!YubiKey::instance()->findValidKeys()) {
+                continue;
+            }
+            for (auto& nextSerial : YubiKey::instance()->foundKeys()) {
+                if (nextSerial.first == targetSerial) {
+                    m_lastHwSerial = targetSerial;
+                    return true;
+                }
+            }
+        }
+    } while (false);
+#endif
+    m_lastHwSerial = 0;
+    return false;
+}
+
+bool DatabaseOpenWidget::checkHwKey()
+{
+#ifdef WITH_XC_YUBIKEY
+    do {
+        if (!YubiKey::instance()->findValidKeys()) {
+            continue;
+        }
+        for (auto& nextSerial : YubiKey::instance()->foundKeys()) {
+            if (nextSerial.first == m_lastHwSerial) {
+                return true;
+            }
+        }
+    } while (false);
+#endif
+    return false;
+}
+
 void DatabaseOpenWidget::load(const QString& filename)
 {
     clearForms();
@@ -188,7 +228,7 @@ void DatabaseOpenWidget::load(const QString& filename)
         }
     }
 
-    if (canPerformQuickUnlock(m_filename)) {
+    if (canPerformQuickUnlock(m_filename) && checkHwKey()) {
         m_ui->centralStack->setCurrentIndex(1);
         m_ui->quickUnlockButton->setFocus();
     } else {
@@ -257,6 +297,13 @@ void DatabaseOpenWidget::openDatabase()
     QString error;
     m_db.reset(new Database());
     bool ok = m_db->open(m_filename, databaseKey, &error);
+
+    if (ok) {
+        ok = updateHwKey();
+        if (!ok) {
+            error = tr("HMAC corruption issue"); // Pretend that we don't know the HW key wasn't inserted
+        }
+    }
 
     if (ok) {
         // Warn user about minor version mismatch to halt loading if necessary
@@ -328,6 +375,12 @@ void DatabaseOpenWidget::openDatabase()
             m_ui->editPassword->selectAll();
             m_ui->editPassword->setFocus();
         }
+
+#ifdef WITH_XC_YUBIKEY
+        if (isOnQuickUnlockScreen() && !checkHwKey()) {
+            resetQuickUnlock();
+        }
+#endif
     }
 }
 
