@@ -86,6 +86,16 @@ DatabaseOpenWidget::DatabaseOpenWidget(QWidget* parent)
         m_ui->editPassword->setShowPassword(false);
     });
 
+#ifdef WITH_XC_YUBIKEY
+    constexpr int32_t hwCheckTimerMs = 20000;
+    connect(&m_hwCheckTimer, &QTimer::timeout, this, [&] {
+        if (isOnQuickUnlockScreen() && m_lastHwSerial > 0 && !updateHwKey()) {
+            resetQuickUnlock();
+        }
+    });
+    m_hwCheckTimer.start(hwCheckTimerMs);
+#endif
+
     QFont font;
     font.setPointSize(font.pointSize() + 4);
     font.setBold(true);
