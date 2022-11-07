@@ -52,6 +52,8 @@ signals:
     void dialogFinished(bool accepted);
 
 protected:
+    bool updateHwKey();
+    bool checkHwKey();
     void showEvent(QShowEvent* event) override;
     void hideEvent(QHideEvent* event) override;
     QSharedPointer<CompositeKey> buildDatabaseKey();
