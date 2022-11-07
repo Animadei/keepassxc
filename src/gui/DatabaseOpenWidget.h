@@ -65,6 +65,7 @@ protected:
     QSharedPointer<Database> m_db;
     QString m_filename;
     bool m_retryUnlockWithEmptyPassword = false;
+    uint32_t m_lastHwSerial = 0;
 
 protected slots:
     virtual void openDatabase();
@@ -82,6 +83,7 @@ private:
     bool m_blockQuickUnlock = false;
     bool m_unlockingDatabase = false;
     QTimer m_hideTimer;
+    QTimer m_hwCheckTimer;
 
     Q_DISABLE_COPY(DatabaseOpenWidget)
 };
