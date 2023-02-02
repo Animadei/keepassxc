@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
+ *  Copyright (C) 2021 Team KeePassXC <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,14 +15,34 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ScreenLockListener.h"
-#include "ScreenLockListenerPrivate.h"
+#ifndef KEEPASSXC_OPENSSHKEYGENDIALOG_H
+#define KEEPASSXC_OPENSSHKEYGENDIALOG_H
 
-ScreenLockListener::ScreenLockListener(QWidget* parent)
-    : QObject(parent)
+#include <QDialog>
+class OpenSSHKey;
+
+namespace Ui
 {
-    m_listener = ScreenLockListenerPrivate::instance(parent);
-    connect(m_listener, SIGNAL(screenLocked()), this, SIGNAL(screenLocked()));
+    class OpenSSHKeyGenDialog;
 }
 
-ScreenLockListener::~ScreenLockListener() = default;
+class OpenSSHKeyGenDialog : public QDialog
+{
+    Q_OBJECT
+
+public:
+    explicit OpenSSHKeyGenDialog(QWidget* parent = nullptr);
+    ~OpenSSHKeyGenDialog() override;
+
+    void accept() override;
+    void setKey(OpenSSHKey* key);
+
+private slots:
+    void typeChanged();
+
+private:
+    QScopedPointer<Ui::OpenSSHKeyGenDialog> m_ui;
+    OpenSSHKey* m_key;
+};
+
+#endif // KEEPASSXC_OPENSSHKEYGENDIALOG_H

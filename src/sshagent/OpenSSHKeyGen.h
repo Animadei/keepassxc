@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
+ *  Copyright (C) 2021 KeePassXC Team <team@keepassxc.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,14 +15,16 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ScreenLockListener.h"
-#include "ScreenLockListenerPrivate.h"
+#ifndef KEEPASSXC_OPENSSHKEYGEN_H
+#define KEEPASSXC_OPENSSHKEYGEN_H
 
-ScreenLockListener::ScreenLockListener(QWidget* parent)
-    : QObject(parent)
+class OpenSSHKey;
+
+namespace OpenSSHKeyGen
 {
-    m_listener = ScreenLockListenerPrivate::instance(parent);
-    connect(m_listener, SIGNAL(screenLocked()), this, SIGNAL(screenLocked()));
-}
+    bool generateRSA(OpenSSHKey& key, int bits);
+    bool generateECDSA(OpenSSHKey& key, int bits);
+    bool generateEd25519(OpenSSHKey& key);
+} // namespace OpenSSHKeyGen
 
-ScreenLockListener::~ScreenLockListener() = default;
+#endif
